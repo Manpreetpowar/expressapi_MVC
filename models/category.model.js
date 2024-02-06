@@ -5,7 +5,8 @@ const objectId = mongoose.Schema.Types.ObjectId;
 
 const categorySchema = new Schema({
     _id: {type: objectId, auto:true},
-    name: {type: String, required:false}
+    name: {type: String, required:true},
+    category_type: {type: String, required:true}
 },{
     versionKey:false
 });
