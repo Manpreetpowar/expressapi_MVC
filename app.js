@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+const url = require('url');
+
 require('./config/db');
 require('dotenv').config();
 app.use(express.json());
@@ -15,7 +17,7 @@ app.use('/api', apiRoutes);
 const port  = process.env.PORT || 5000;
 
 app.listen(port, ()=>{
-    console.log(`server is running at http://localhost:${port}`);
+ console.log(`server is running at http://localhost:${port}`);
 })
 
 

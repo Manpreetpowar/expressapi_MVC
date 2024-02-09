@@ -1,6 +1,6 @@
 const httpStatusCodes = require('http-status-codes');
 const Category = require('../models/category.model');
-
+const ApiResponse = require('./api.response');
 const { validationResult } = require('express-validator');
 // const db = await getDb();
 // const admin = db.collection('categories');
@@ -10,9 +10,11 @@ class CategoryController{
   getAllItems = async (req, res) => {
         try {
           const categories = await Category.find({});
-          res.json(categories);
+          const response = new ApiResponse(200, 'Categories list', categories);
+          response.send(res);
         } catch (error) {
-          res.status(500).json({ message: error.message });
+          const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
+          response.send(res);
         }
     }
       
@@ -20,9 +22,11 @@ class CategoryController{
     addItem = (req, res) => {
       const body_data = req.body;
         Category.create(body_data).then(doc => {
-            return res.status(httpStatusCodes.StatusCodes.CREATED).send(doc);
-        }).catch(err => {
-            return res.status(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+          const response = new ApiResponse(httpStatusCodes.StatusCodes.CREATED, 'Category has been created', doc);
+          response.send(res);
+        }).catch(error => {
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
+            response.send(res);
         });
     }
 
@@ -30,12 +34,29 @@ class CategoryController{
     getSingleItem = async (req, res) => {
       try {
         const item = await Category.findById(req.params.id);
-        if(!item){
-          return res.status(httpStatusCodes.StatusCodes.NOT_FOUND);
+        let statusCode, message, data;
+        if (!item) {
+          statusCode = httpStatusCodes.StatusCodes.NOT_FOUND;
+          message = 'Data not found';
+          data = {};
+        } else {
+          statusCode = httpStatusCodes.StatusCodes.OK;
+          message = 'Category data';
+          data = item;
         }
-        return res.status(httpStatusCodes.StatusCodes.OK).send(item);
+        const response = new ApiResponse(statusCode, message, data);
+         response.send(res);
       } catch (error) {
-        return res.status(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            // Customize the error message based on the error type
+          let errorMessage;
+          if (error.name === 'CastError') {
+            errorMessage = 'Invalid category ID format';
+          } else {
+            errorMessage = 'Internal Server Error';
+          }
+
+          const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, errorMessage, {});
+          response.send(res);
       }
     }
 
@@ -43,24 +64,49 @@ class CategoryController{
     updateItem = async (req, res) => {
         try {
           const updatedItem = await Category.findByIdAndUpdate(req.params.id, req.body, { new: true });
+          let statusCode, message, data;
           if (!updatedItem) {
-            return res.status(httpStatusCodes.StatusCodes.NOT_FOUND);
+            statusCode = httpStatusCodes.StatusCodes.NOT_FOUND;
+            message = 'Data not found';
+            data = {};
+          } else {
+            statusCode = httpStatusCodes.StatusCodes.OK;
+            message = 'Category has been updated';
+            data = updatedItem;
           }
-          return res.status(httpStatusCodes.StatusCodes.OK).send(updatedItem);
+          const response = new ApiResponse(statusCode, message, data);
+          response.send(res);
         } catch (error) {
-          return res.status(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          let errorMessage;
+          if (error.name === 'CastError') {
+            errorMessage = 'Invalid category ID format';
+          } else {
+            errorMessage = 'Internal Server Error';
+          }
+
+          const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, errorMessage, {});
+          response.send(res);
         }
     }
 
     deleteItem = async(req, res) => {
       try {
         const deletedItem = await Category.findByIdAndDelete(req.params.id);
+        let statusCode, message, data;
         if (!deletedItem) {
-          return res.status(httpStatusCodes.StatusCodes.NOT_FOUND).json({ error: 'Item not found' });
+          statusCode = httpStatusCodes.StatusCodes.NOT_FOUND;
+          message = 'Data not found';
+          data = {};
+        } else {
+          statusCode = httpStatusCodes.StatusCodes.OK;
+          message = 'Category has been deleted';
+          data = deletedItem;
         }
-        res.status(httpStatusCodes.StatusCodes.OK).json({ message: 'Item deleted successfully' });
+        const response = new ApiResponse(statusCode, message, data);
+        response.send(res);
       } catch (error) {
-        return res.status(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
+        response.send(res);
       }
     }
 }
