@@ -5,6 +5,6 @@ const {UserRegisterValidate,UserLoginValidate} = require('../utils/userValidatio
 const userController = new UserController();
 
 router.post('/register',UserRegisterValidate, userController.registerUser);
-router.post('/login', userController.loginUser);
+router.post('/login', UserLoginValidate,userController.loginUser);
 
 module.exports = router;

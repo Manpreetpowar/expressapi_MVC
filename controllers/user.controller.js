@@ -31,24 +31,25 @@ class UserController{
        const user = await UserModel.findOne({email:req.body.email});
       
        if(!user){
-            // const response = new ApiResponse(httpStatusCodes.StatusCodes.UNAUTHORIZED,'Auth failed, Invalid username/password',{});
-            // response.send(res);
-            return res.status(401).json({message:'Auth failed, Invalid username/password'});
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.UNAUTHORIZED,'Auth failed, Invalid username/password',{});
+            response.send(res);
+            // return res.status(401).json({message:'Auth failed, Invalid username/password'});
        }
       
        const isPasswordEqual = await bcrypt.compare(req.body.password, user.password);
        if(!isPasswordEqual){
-            // const response = new ApiResponse(httpStatusCodes.StatusCodes.UNAUTHORIZED,'Auth failed, Invalid username/password',{});
-            // response.send(res);
-            return res.status(401).json({message:'Auth failed, Invalid username/password'});
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.UNAUTHORIZED,'Auth failed, Invalid username/password',{});
+            response.send(res);
+            // return res.status(401).json({message:'Auth failed, Invalid username/password'});
         }
 
         const tokenObject ={
-            _id      : user._id,
+            id      : user._id,
             fullName : user.fullName,
             email    :user.email
         }
         const jwtToken =  jwt.sign(tokenObject, process.env.SECRET, {expiresIn:'4h'})
+        // console.log(jwtToken);
        tokenObject.jwtToken = jwtToken;
        const response = new ApiResponse(httpStatusCodes.StatusCodes.OK, 'Login successfully', tokenObject);
         response.send(res);
