@@ -3,60 +3,163 @@ const httpStatusCodes = require('http-status-codes');
 const ApiResponse = require('../controllers/api.response');
 const bcrypt  = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const {getLatLongFromLocation}  = require('../utils/getLatLongFromAddress');
+// Multer storage configuration
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, 'uploads/'); // Set the destination folder for storing uploaded files
+    },
+    filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname); // Set a unique filename for the uploaded file
+    }
+  });
+  
+  // Multer upload configuration
+  const upload = multer({ storage: storage }).single('profile_image');
 
+  
 class UserController{
-    //validate req.body
-    //create MongoDB UerModel
-    //do password encription
-    //save data to mongodb
-    //return response to the client
+  
+    //USER REGISTERATION CODE***********************
     registerUser = async (req,res) => {
-        // res.send(await bcrypt.hash(req.body.password,10));
-        const userModel = new UserModel(req.body);
-        userModel.password = await bcrypt.hash(req.body.password,10);
         try {
+            const existUser = await UserModel.findOne({user_id:req.body.user_id});
+            if(existUser){
+                const response = new ApiResponse(httpStatusCodes.StatusCodes.CONFLICT, 'User Id already exists', {});
+                return response.send(res);
+            }
+
+            const existUserPhone = await UserModel.findOne({phone:req.body.phone});
+            if(existUserPhone){
+                const response = new ApiResponse(httpStatusCodes.StatusCodes.CONFLICT, 'Phone already exists', {});
+                return response.send(res);
+            }
+            
+            //generate random 4 digit code*********
+            const randomNumber = Math.floor(1000 + Math.random() * 9000);
+            const otp =  randomNumber.toString();
+
+            const userModel = new UserModel(req.body);
+            userModel.password = await bcrypt.hash(req.body.password,10);
+            userModel.otp = otp;
+            const {lat,lng,name} = await getLatLongFromLocation({query:{address:req.body.address}},res);
+            if (!lat || !lng || !name) {
+                userModel.latitude = '';
+                userModel.longitude = '';
+            } else {
+                userModel.latitude = lat;
+                userModel.longitude = lng;
+            }
+           
+            // If profile image is uploaded, save its path in the userModel
+            // if (req.file) {
+            //     userModel.profile_image = req.file.path; // Assuming 'profile_image' is the field name in the model
+            // }
+
             const response = await userModel.save();
             response.password = undefined;
             const responsedata = new ApiResponse(httpStatusCodes.StatusCodes.CREATED, 'success', response);
-            responsedata.send(res);
+            return responsedata.send(res);
         } catch (error) {
             const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
-            response.send(res);
+            return response.send(res);
         }
     }
     
-
+    //LOGIN CODE****************************************
     loginUser = async (req,res) => {
        try {
-       const user = await UserModel.findOne({email:req.body.email});
+       const user = await UserModel.findOne({user_id:req.body.user_id});
       
        if(!user){
             const response = new ApiResponse(httpStatusCodes.StatusCodes.UNAUTHORIZED,'Auth failed, Invalid username/password',{});
-            response.send(res);
+          return  response.send(res);
             // return res.status(401).json({message:'Auth failed, Invalid username/password'});
        }
       
        const isPasswordEqual = await bcrypt.compare(req.body.password, user.password);
        if(!isPasswordEqual){
             const response = new ApiResponse(httpStatusCodes.StatusCodes.UNAUTHORIZED,'Auth failed, Invalid username/password',{});
-            response.send(res);
+           return response.send(res);
             // return res.status(401).json({message:'Auth failed, Invalid username/password'});
         }
 
         const tokenObject ={
             id      : user._id,
-            fullName : user.fullName,
-            email    :user.email
+            user_name : user.user_name,
+            user_id    :user.user_id
         }
-        const jwtToken =  jwt.sign(tokenObject, process.env.SECRET, {expiresIn:'4h'})
+        const jwtToken =  jwt.sign(tokenObject, process.env.SECRET, {expiresIn:'8h'})
         // console.log(jwtToken);
        tokenObject.jwtToken = jwtToken;
        const response = new ApiResponse(httpStatusCodes.StatusCodes.OK, 'Login successfully', tokenObject);
-        response.send(res);
+        return response.send(res);
        } catch (error) {
-        const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
-        response.send(res);
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
+            return response.send(res);
        }
+    }
+
+    //CODE TO VERIFY THE OTP***********************************
+    verifyOTP = async(req, res) => {
+        try {
+            const matchedUser = await UserModel.findOne({phone:req.body.phone,otp:req.body.otp});
+            
+            if(matchedUser) {
+                // console.log('OTP matched:', matchedUser);
+               const updated_object =  await UserModel.findByIdAndUpdate(
+                    matchedUser._id,
+                    {$set: {is_verified : '1'} },
+                    {new: true}
+                );
+                updated_object.password = undefined;
+                const response = new ApiResponse(httpStatusCodes.StatusCodes.CREATED, 'OTP verified successfully', updated_object);
+                return response.send(res);
+            } else {
+                const response = new ApiResponse(httpStatusCodes.StatusCodes.UNAUTHORIZED,'Invalid OTP',{});
+                return response.send(res);
+            }
+        } catch (error) {
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
+            return response.send(res);
+        }
+       
+    }
+
+
+    //GET ALL THE USER LIST************************************
+    getUsers = async (req,res) => {
+        try {
+           const users  = await UserModel.find({},{password:0});
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.OK, 'Users list', users);
+            return response.send(res);
+        } catch (error) {
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
+            return response.send(res);  
+        }
+    }
+
+    userDetails = async(req,res) => {
+        try {
+            const decoded = jwt.verify(req.headers['authorization'],process.env.SECRET);
+            if(decoded){
+                // return res.send(decoded);
+                // If token is valid, fetch user details using the decoded user ID
+                const userdata = await UserModel.findById(decoded.id);
+                if (!userdata) {
+                    const response = new ApiResponse(httpStatusCodes.StatusCodes.NOT_FOUND, 'User not found', {});
+                    return response.send(res);
+                }
+    
+                // Return user details in the response
+                const response = new ApiResponse(httpStatusCodes.StatusCodes.OK, 'Customer Detail', userdata);
+                return response.send(res);
+            }
+        } catch (error) {
+            const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
+            return response.send(res); 
+        }
     }
 }
 

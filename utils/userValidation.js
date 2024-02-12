@@ -4,13 +4,18 @@ const httpStatusCodes = require('http-status-codes');
 
 const UserRegisterValidate = (req, res, next) => {
     const schema = Joi.object({
-        fullName: Joi.string().min(3).max(100).required(),
-        email: Joi.string().email().required(),
+        user_name: Joi.string().min(3).max(100).required(),
+        user_id: Joi.string().min(4).max(100).required(),
         password: Joi.string().min(4).alphanum().required(),
+        phone: Joi.string().regex(/^\d{10}$/).required().messages({
+            'string.pattern.base': 'Phone number must be exactly 10 digits'
+        }),
+        user_type: Joi.string().valid('customer', 'provider').required(),
+        address: Joi.string().min(3).max(100).required(),
     });
-console.log(req.body);
+// console.log(req.body);
     const { error, value } = schema.validate(req.body, { abortEarly: false });
-    console.log(error);
+    // console.log(error);
     if (error) {
         // Collect all validation errors as an array of objects
         const errors = error.details.map(detail => ({
@@ -25,10 +30,9 @@ console.log(req.body);
 
 const UserLoginValidate = (req, res, next) => {
     const schema = Joi.object({
-        email: Joi.string().email().required(),
+        user_id: Joi.string().required(),
         password: Joi.string().min(4).alphanum().required(),
     });
-
     const { error, value } = schema.validate(req.body, { abortEarly: false });
     if (error) {
         // Collect all validation errors as an array of objects
@@ -36,9 +40,33 @@ const UserLoginValidate = (req, res, next) => {
             key: detail.context.key,
             value: detail.message.replace(/"/g, '')
         }));
-    //     const response = new ApiResponse(httpStatusCodes.StatusCodes.BAD_REQUEST, errors, {});
-    //    return response;
-    return res.status(400).json({ message: 'Validation error', errors });
+        const response = new ApiResponse(httpStatusCodes.StatusCodes.BAD_REQUEST, errors, {});
+        return response.send(res);
+  
+    }
+    next();
+}
+
+
+//OTP VALIDATION******************************
+
+const UserOTPValidate = (req, res, next) => {
+    const schema = Joi.object({
+        phone: Joi.string().regex(/^\d{10}$/).required().messages({
+            'string.pattern.base': 'Phone number must be exactly 10 digits'
+        }),
+        otp: Joi.string().length(4).required(),
+    });
+    const { error, value } = schema.validate(req.body, { abortEarly: false });
+    if (error) {
+        // Collect all validation errors as an array of objects
+        const errors = error.details.map(detail => ({
+            key: detail.context.key,
+            value: detail.message.replace(/"/g, '')
+        }));
+        const response = new ApiResponse(httpStatusCodes.StatusCodes.BAD_REQUEST, errors, {});
+        return response.send(res);
+  
     }
     next();
 }
@@ -46,4 +74,4 @@ const UserLoginValidate = (req, res, next) => {
 
 
 
-module.exports = {UserRegisterValidate,UserLoginValidate};
+module.exports = {UserRegisterValidate,UserLoginValidate,UserOTPValidate};
