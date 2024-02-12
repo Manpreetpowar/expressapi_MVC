@@ -3,24 +3,35 @@ const httpStatusCodes = require('http-status-codes');
 const ApiResponse = require('../controllers/api.response');
 const bcrypt  = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const multer = require('multer');
 const {getLatLongFromLocation}  = require('../utils/getLatLongFromAddress');
-// Multer storage configuration
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, 'uploads/'); // Set the destination folder for storing uploaded files
-    },
-    filename: function (req, file, cb) {
-      cb(null, Date.now() + '-' + file.originalname); // Set a unique filename for the uploaded file
-    }
-  });
-  
-  // Multer upload configuration
-  const upload = multer({ storage: storage }).single('profile_image');
+const nodemailer = require('nodemailer');
 
-  
+    
+    //EMAIL SEND CODE*****************************
+   const sendRegistrationEmail = async (email, user_id, otp) => {
+        // Create a transporter object using SMTP transport
+        let transporter = nodemailer.createTransport({
+            service: 'secure304.inmotionhosting.com',
+            auth: {
+                user: 'manpreet.p@macrew.net', // Your email address
+                pass: 'F_*8j.D6]z{@' // Your email password
+            }
+        });
+    
+        // Email content
+        let mailOptions = {
+            from: 'manpreet.p@macrew.net', // Sender address
+            to: email, // Recipient address
+            subject: 'Welcome to Our App', // Subject line
+            text: `Dear ${user_id},\n\nWelcome to Our App!\n\nYour OTP for registration is: ${otp}\n\nThanks,\nYour App Team`
+        };
+    
+        // Send email
+        await transporter.sendMail(mailOptions);
+    };
 class UserController{
-  
+
+
     //USER REGISTERATION CODE***********************
     registerUser = async (req,res) => {
         try {
@@ -43,7 +54,7 @@ class UserController{
             const userModel = new UserModel(req.body);
             userModel.password = await bcrypt.hash(req.body.password,10);
             userModel.otp = otp;
-            const {lat,lng,name} = await getLatLongFromLocation({query:{address:req.body.address}},res);
+            const {lat,lng,name} = await getLatLongFromLocation({address:req.body.address});
             if (!lat || !lng || !name) {
                 userModel.latitude = '';
                 userModel.longitude = '';
@@ -51,11 +62,16 @@ class UserController{
                 userModel.latitude = lat;
                 userModel.longitude = lng;
             }
-           
+
+                // Send registration email
+                await sendRegistrationEmail(req.body.email, req.body.user_id, otp);
+
+        //    console.log(req.file);
             // If profile image is uploaded, save its path in the userModel
-            // if (req.file) {
-            //     userModel.profile_image = req.file.path; // Assuming 'profile_image' is the field name in the model
-            // }
+            if (req.file) {
+                userModel.profile_image = req.file.originalname; // Assuming 'profile_image' is the field name in the model
+            }
+
 
             const response = await userModel.save();
             response.password = undefined;

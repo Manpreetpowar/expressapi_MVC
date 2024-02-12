@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
+ 
     user_name:{
         type:String,
         required:true
@@ -48,7 +49,7 @@ const UserSchema = new Schema({
         default: '1'
     },
     profile_image: {
-        type: Buffer
+        type: String
     },
     joined_date: {
         type: Date,

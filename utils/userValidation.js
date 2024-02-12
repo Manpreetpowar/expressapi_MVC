@@ -12,6 +12,7 @@ const UserRegisterValidate = (req, res, next) => {
         }),
         user_type: Joi.string().valid('customer', 'provider').required(),
         address: Joi.string().min(3).max(100).required(),
+        email: Joi.string().email(),
     });
 // console.log(req.body);
     const { error, value } = schema.validate(req.body, { abortEarly: false });
