@@ -28,5 +28,5 @@ router.post('/login', UserLoginValidate,userController.loginUser);
 router.get('/list',ensureAuthenticated,userController.getUsers);
 router.get('/customer_details',ensureAuthenticated,userController.userDetails);
 router.post('/verifyOTP', UserOTPValidate, userController.verifyOTP);
-
+router.post('/send_notification', userController.sendNotification);
 module.exports = router;

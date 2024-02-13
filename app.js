@@ -7,6 +7,20 @@ require('dotenv').config();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
+const admin = require('firebase-admin');
+const path = require('path');
+
+// const cronJob = require('./cronJobs'); 
+
+// Resolve the path to the serviceAccountKey.json file
+const serviceAccount = require(path.resolve(__dirname, 'serviceAccountKey.json'));
+
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
+
+
 app.get('/', (req, res) => {
     res.send('API Portal');
 });

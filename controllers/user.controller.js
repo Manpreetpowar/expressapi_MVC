@@ -5,7 +5,7 @@ const bcrypt  = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const {getLatLongFromLocation}  = require('../utils/getLatLongFromAddress');
 const nodemailer = require('nodemailer');
-
+const admin = require('firebase-admin');
     
     //EMAIL SEND CODE*****************************
    const sendRegistrationEmail = async (email, user_id, otp) => {
@@ -69,7 +69,7 @@ class UserController{
         //    console.log(req.file);
             // If profile image is uploaded, save its path in the userModel
             if (req.file) {
-                userModel.profile_image = req.file.originalname; // Assuming 'profile_image' is the field name in the model
+                userModel.profile_image = req.file.filename; // Assuming 'profile_image' is the field name in the model
             }
 
 
@@ -162,7 +162,7 @@ class UserController{
             if(decoded){
                 // return res.send(decoded);
                 // If token is valid, fetch user details using the decoded user ID
-                const userdata = await UserModel.findById(decoded.id);
+                const userdata = await UserModel.findById(decoded.id).populate('category');
                 if (!userdata) {
                     const response = new ApiResponse(httpStatusCodes.StatusCodes.NOT_FOUND, 'User not found', {});
                     return response.send(res);
@@ -177,6 +177,41 @@ class UserController{
             return response.send(res); 
         }
     }
+
+    //NOTIFICATION SENDING CODE*******************
+    sendNotification = async(req,res) => {
+        try {
+            const token = 'DEVICE_FCM_TOKEN'; // Replace with actual FCM token
+            const title = 'Test Notification';
+            const body = 'This is a test notification';
+            await sendNotification(token, title, body);
+            res.send('Test notification sent successfully');
+        } catch (error) {
+            console.error('Error sending test notification:', error);
+            res.status(500).send('Failed to send test notification');
+        }
+    }
+
+
+    // Function to send notification
+ sendNotification = async (token, title, body) => {
+    const message = {
+        notification: {
+            title: title,
+            body: body
+        },
+        token: token
+    };
+
+    try {
+        const response = await admin.messaging().send(message);
+        console.log('Successfully sent message:', response);
+        return response;
+    } catch (error) {
+        console.error('Error sending message:', error);
+        throw error;
+    }
+};
 }
 
 module.exports = UserController;

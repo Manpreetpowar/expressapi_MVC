@@ -13,12 +13,27 @@ const UserRegisterValidate = (req, res, next) => {
         user_type: Joi.string().valid('customer', 'provider').required(),
         address: Joi.string().min(3).max(100).required(),
         email: Joi.string().email(),
+        visiting_charges: Joi.when('user_type', {
+            is: 'provider',
+            then: Joi.number().required().positive()
+                .messages({
+                    'number.base': 'Visiting charges must be a number',
+                    'number.positive': 'Visiting charges must be a positive number'
+                }),
+            otherwise: Joi.forbidden() 
+        }),
+        category: Joi.when('user_type', {
+            is: 'provider',
+            then: Joi.string().required().messages({
+                'any.required': 'Category is required'
+            }),
+            otherwise: Joi.forbidden() 
+        })
     });
 // console.log(req.body);
     const { error, value } = schema.validate(req.body, { abortEarly: false });
     // console.log(error);
     if (error) {
-        // Collect all validation errors as an array of objects
         const errors = error.details.map(detail => ({
             key: detail.context.key,
             value: detail.message.replace(/"/g, '')
