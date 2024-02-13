@@ -4,17 +4,19 @@ const ApiResponse = require('../controllers/api.response');
 const bcrypt  = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const {getLatLongFromLocation}  = require('../utils/getLatLongFromAddress');
+const {sendFCMNotification} = require('../utils/sendNotification');
 const nodemailer = require('nodemailer');
-const admin = require('firebase-admin');
+
     
     //EMAIL SEND CODE*****************************
    const sendRegistrationEmail = async (email, user_id, otp) => {
         // Create a transporter object using SMTP transport
         let transporter = nodemailer.createTransport({
-            service: 'secure304.inmotionhosting.com',
+            host: 'smtp.gmail.com',
+            port:587,
             auth: {
-                user: 'manpreet.p@macrew.net', // Your email address
-                pass: 'F_*8j.D6]z{@' // Your email password
+                user: 'developer.macrew@gmail.com', // Your email address
+                pass: 'rylnssryqwrwvvfl' // Your email password
             }
         });
     
@@ -64,7 +66,7 @@ class UserController{
             }
 
                 // Send registration email
-                // await sendRegistrationEmail(req.body.email, req.body.user_id, otp);
+               await sendRegistrationEmail(req.body.email, req.body.user_id, otp);
 
         //    console.log(req.file);
             // If profile image is uploaded, save its path in the userModel
@@ -178,40 +180,28 @@ class UserController{
         }
     }
 
-    //NOTIFICATION SENDING CODE*******************
-    sendNotification = async(req,res) => {
-        try {
-            const token = 'DEVICE_FCM_TOKEN'; // Replace with actual FCM token
-            const title = 'Test Notification';
-            const body = 'This is a test notification';
-            await sendNotification(token, title, body);
-            res.send('Test notification sent successfully');
-        } catch (error) {
+
+
+// Updated function to send notification
+sendNotification = async (req, res) => {
+    try {
+        const token = 'dvrCpmnYfko6mLlEvrxPfq:APA91bFQRqGnrUVDqXoaTA3QtRRanpWWJxgBk_YO6nw9QVWYlX2Oyoq69ETurviYsXSfIk6Y1aIt3eqIWNMvZ6DAgyqVMmUFGKzP2vCEgSU8rEVV7D4P_VL5wdsT3X9XaycWF89JXSd_'; // Replace with actual FCM token
+        const title = 'Test Notification';
+        const body = 'This is a test notification';
+        await sendFCMNotification(token, title, body);
+        res.send('Test notification sent successfully');
+    } catch (error) {
+        if (error.code === 'messaging/registration-token-not-registered') {
+            console.error('FCM registration token is not valid:', error);
+            res.status(400).send('FCM registration token is not valid');
+        } else {
             console.error('Error sending test notification:', error);
             res.status(500).send('Failed to send test notification');
         }
     }
-
-
-    // Function to send notification
- sendNotification = async (token, title, body) => {
-    const message = {
-        notification: {
-            title: title,
-            body: body
-        },
-        token: token
-    };
-
-    try {
-        const response = await admin.messaging().send(message);
-        console.log('Successfully sent message:', response);
-        return response;
-    } catch (error) {
-        console.error('Error sending message:', error);
-        throw error;
-    }
 };
+
+
 }
 
 module.exports = UserController;

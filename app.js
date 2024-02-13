@@ -14,7 +14,7 @@ const path = require('path');
 // const cronJob = require('./cronJobs'); 
 
 // Resolve the path to the serviceAccountKey.json file
-const serviceAccount = require(path.resolve(__dirname, 'serviceAccountKey.json'));
+const serviceAccount = require(path.resolve(__dirname, 'aio-sports-c870a-firebase-adminsdk-4g0ql-b59bbed7a9.json'));
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount)
