@@ -66,7 +66,7 @@ class UserController{
             }
 
                 // Send registration email
-               await sendRegistrationEmail(req.body.email, req.body.user_id, otp);
+            //    await sendRegistrationEmail(req.body.email, req.body.user_id, otp);
 
         //    console.log(req.file);
             // If profile image is uploaded, save its path in the userModel

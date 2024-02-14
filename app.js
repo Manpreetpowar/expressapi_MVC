@@ -4,6 +4,7 @@ const url = require('url');
 
 require('./config/db');
 require('dotenv').config();
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
