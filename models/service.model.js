@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+const objectId = mongoose.Schema.Types.ObjectId;
 const ServiceSchema = mongoose.Schema({
     customer:{
         type:objectId,
@@ -24,8 +25,12 @@ const ServiceSchema = mongoose.Schema({
     },
     status:{
         type:String,
-        enum: ['not_started', 'started','completed'],
+        enum: ['requested','accept','decline','cancelled','not_started', 'started','completed'],
         default: 'not_started'
+    },
+    status_action:{
+        type: objectId,
+        ref:'users'
     },
     payment_status:{
         type:String,
@@ -82,7 +87,7 @@ const ServiceSchema = mongoose.Schema({
 
 
 // Middleware to format createdAt date
-ReviewSchema.pre('save', function(next) {
+ServiceSchema.pre('save', function(next) {
     // Format the date to Y-m-d format
     this.createdAt = this.createdAt.toISOString().split('T')[0];
     next();
