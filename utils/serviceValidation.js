@@ -4,7 +4,7 @@ const httpStatusCodes = require('http-status-codes');
 
 const UserRegisterValidate = (req, res, next) => {
     const schema = Joi.object({
-        date: Joi.date().iso().required().messages({
+        booking_date: Joi.date().iso().required().messages({
             'date.base': 'Date must be in a valid format (YYYY-MM-DD)',
             'date.iso': 'Date must be in a valid format (YYYY-MM-DD)',
             'any.required': 'Date is required'
@@ -30,13 +30,14 @@ const UserRegisterValidate = (req, res, next) => {
             'number.base': 'Visiting charges must be a number',
             'number.positive': 'Visiting charges must be a positive number'
         }),
+        booking_time:Joi.string(),
         work_time:Joi.string(),
-        origin: Joi.string().min(3).max(100).required(),
-        origin_latitude: Joi.string().min(4).max(100).required(),
-        origin_longitude: Joi.string().min(4).max(100).required(),
-        destination: Joi.string().min(4).max(100).required(),
-        destination_latitude: Joi.string().min(4).max(100).required(),
-        destination_longitude: Joi.string().min(4).max(100).required(),
+        customer_location: Joi.string().min(3).max(100).required(),
+        customer_latitude: Joi.string().min(4).max(100).required(),
+        customer_longitude: Joi.string().min(4).max(100).required(),
+        provider_location: Joi.string().min(4).max(100).required(),
+        provider_latitude: Joi.string().min(4).max(100).required(),
+        provider_longitude: Joi.string().min(4).max(100).required(),
         distance: Joi.string().required(),
         phone: Joi.string().regex(/^\d{10}$/).required().messages({
             'string.pattern.base': 'Phone number must be exactly 10 digits'
@@ -44,7 +45,7 @@ const UserRegisterValidate = (req, res, next) => {
         status: Joi.string().valid('not_started', 'started','completed'),
         payment_status: Joi.string().valid('pending', 'paid'),
         customer_comment: Joi.string().required(),
-        technician_comment: Joi.string().required(),
+        provider_comment: Joi.string().required(),
     });
 // console.log(req.body);
     const { error, value } = schema.validate(req.body, { abortEarly: false });

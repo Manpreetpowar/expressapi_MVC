@@ -10,9 +10,12 @@ const ServiceSchema = mongoose.Schema({
         type:objectId,
         ref:'users'
     },
-    date:{
+    booking_date:{
         type:String,
-        required:true
+     
+    },
+    booking_time:{
+        type:Number,
     },
     work_time:{
         type:Number,
@@ -49,22 +52,22 @@ const ServiceSchema = mongoose.Schema({
         type: Number,
         min:0
     },
-    origin:{
+    customer_location:{
         type: String
     },
-    origin_latitude:{
+    customer_latitude:{
         type: String
     },
-    origin_longitude:{
+    customer_longitude:{
         type: String
     },
-    destination:{
+    provider_location:{
         type: String
     },
-    destination_latitude:{
+    provider_latitude:{
         type: String
     },
-    destination_longitude:{
+    provider_longitude:{
         type: String
     },
     distance:{
@@ -73,7 +76,7 @@ const ServiceSchema = mongoose.Schema({
     customer_comment:{
         type: String
     },
-    technician_comment:{
+    provider_comment:{
         type: String
     },
     images: [{
@@ -87,11 +90,11 @@ const ServiceSchema = mongoose.Schema({
 
 
 // Middleware to format createdAt date
-ServiceSchema.pre('save', function(next) {
-    // Format the date to Y-m-d format
-    this.createdAt = this.createdAt.toISOString().split('T')[0];
-    next();
-});
+// ServiceSchema.pre('createdAt', function(next) {
+//     // Format the date to Y-m-d format
+//     this.createdAt = this.createdAt.toISOString().split('T')[0];
+//     next();
+// });
 
 
 

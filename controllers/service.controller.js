@@ -6,8 +6,10 @@ class ServiceController{
 
     applyService = async (req, res) => {
       try {
+        // res.send(req.body); exist;
             const service =  new ServiceModel(req.body);
-            response = await service.save();
+            const response = await service.save();
+            // res.send(service); exist;
             const responsedata = new ApiResponse(httpStatusCodes.StatusCodes.CREATED, 'Job request has been sent', response);
             return responsedata.send(res);
         } catch (error) {

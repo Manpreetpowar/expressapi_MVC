@@ -1,4 +1,5 @@
 const UserModel = require('../models/UserModel');
+const ServiceModel = require('../models/service.model');
 const httpStatusCodes = require('http-status-codes');
 const ApiResponse = require('../controllers/api.response');
 const bcrypt  = require('bcrypt');
@@ -108,7 +109,7 @@ class UserController{
             user_name : user.user_name,
             user_id    :user.user_id
         }
-        const jwtToken =  jwt.sign(tokenObject, process.env.SECRET, {expiresIn:'8h'})
+        const jwtToken =  jwt.sign(tokenObject, process.env.SECRET, {expiresIn:'888h'})
         // console.log(jwtToken);
        tokenObject.jwtToken = jwtToken;
        const response = new ApiResponse(httpStatusCodes.StatusCodes.OK, 'Login successfully', tokenObject);
@@ -147,16 +148,32 @@ class UserController{
 
 
     //GET ALL THE USER LIST************************************
-    getUsers = async (req,res) => {
+    getUsers = async (req, res) => {
         try {
-           const users  = await UserModel.find({},{password:0});
+            const date = new Date();
+            const currentDate = date.toISOString().split('T')[0];
+            const decoded = jwt.verify(req.headers['authorization'], process.env.SECRET);
+            const users = await UserModel.find({}, { password: 0 });
+    
+            // Iterate over the users array sequentially
+        for (let user of users) {
+            const service = await ServiceModel.findOne({ customer: decoded.id, booking_date: currentDate });
+            // Update the user object with booking status
+            if (service) {
+                user.booking_status = service.status;
+            } else {
+                user.booking_status = 'not_booked';
+            }
+        }
+    
             const response = new ApiResponse(httpStatusCodes.StatusCodes.OK, 'Users list', users);
             return response.send(res);
         } catch (error) {
             const response = new ApiResponse(httpStatusCodes.StatusCodes.INTERNAL_SERVER_ERROR, error.message, {});
-            return response.send(res);  
+            return response.send(res);
         }
     }
+    
 
     userDetails = async(req,res) => {
         try {
